@@ -4,8 +4,8 @@ NAME = main
 
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
-DEPS = $(call rwildcard,src/,*.h)
-SRC = $(call rwildcard,src/,*.c)
+DEPS = $(subst /,\,$(call rwildcard,src/,*.h))
+SRC = $(subst /,\,$(call rwildcard,src/,*.c))
 OBJ = $(patsubst %.c,%.o, $(SRC))
 
 
@@ -20,12 +20,12 @@ endif
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 make: $(OBJ)
-	$(CC) -o bin/$(NAME) $^ $(CFLAGS)
+	$(CC) -o bin\$(NAME) $^ $(CFLAGS)
 
 run: make
-	@./bin/$(NAME)
+	@.\bin\$(NAME)
 
 .PHONY: clean
 
 clean:
-	$(RM) bin\* $(OBJ)
+	@ $(RM) bin\* $(OBJ)
