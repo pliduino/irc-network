@@ -1,21 +1,19 @@
 CC = gcc
 CFLAGS = -I src/ram_lib
-
-DEPS = src\ram_lib\ram_lib.h
-OBJ = src\ram_lib\ram_lib.o src\main.o
-
 NAME = main
+
+rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
+
+DEPS = $(call rwildcard,src/,*.h)
+SRC = $(call rwildcard,src/,*.c)
+OBJ = $(patsubst %.c,%.o, $(SRC))
+
 
 ifeq ($(OS),Windows_NT)
 	RM = del /q
-    RRM = rmdir /q /s
 else
     RM = rm -f
-    RRM = rm -f -r
 endif
-
-# all: o
-# 	gcc src/main.c -o main
 
 
 %.o: %.c $(DEPS)
@@ -30,4 +28,4 @@ run: make
 .PHONY: clean
 
 clean:
-	@ $(RM) bin\* $(OBJ)
+	$(RM) bin\* $(OBJ)
