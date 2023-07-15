@@ -1,26 +1,21 @@
 #include "client.h"
 #include "server.h"
 #include <stdio.h>
-#include <winsock2.h>
 
 #define PORT 8080
 
-int main(int argc, char const *argv[])
-{
-    char input;
+int main(int argc, char const *argv[]) {
+  char input;
 
-    printf("Which: S/C\n");
+  printf("Which: s/c\n");
 
-    scanf("%c", &input);
+  scanf("%c", &input);
 
-    if (input == 'S')
-    {
-        server_execute();
-    }
-    else if (input == 'C')
-    {
-        client_execute();
-    }
+  if (input == 's') {
+    server_execute();
+  } else if (input == 'c') {
+    client_execute();
+  }
 
-    return 0;
+  return 0;
 }
