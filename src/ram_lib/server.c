@@ -1,4 +1,7 @@
 #include "server.h"
+#include "connection.h"
+
+#include <pthread.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,13 +12,13 @@
 
 #include <unistd.h>
 #define PORT 8080
+#define BUFFER_SIZE 4096
 
 int server_execute() {
-  struct sockaddr_in own_address = {0};
-
-  char buffer[1024] = {0};
-
+  struct sockaddr_in own_address, client_address;
   int sockfd;
+  int new_socket;
+
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     printf("Error while creating the socket\n");
     return -1;
@@ -32,23 +35,22 @@ int server_execute() {
 
   listen(sockfd, 3);
   int addrlen;
-  struct sockaddr_in client_address;
 
-  printf("**\tWaiting For Client\t**\n");
+  printf("**\tWaiting for Client\t**\n");
 
-  int new_socket =
+  new_socket =
       accept(sockfd, (struct sockaddr *)&client_address, (socklen_t *)&addrlen);
 
-  printf("**\tReceiving Message\t**\n");
-  int bytes_received;
-  if ((bytes_received = read(new_socket, buffer, 1024)) > 0) {
-    printf("%d, %s\n", bytes_received, buffer);
-  } else {
-    printf("Message too small");
-  }
+  printf("**\tConnected to Client\t**\n");
 
-  printf("**\tSending Message\t\t**\n");
-  send(new_socket, "Hello Back", 10, 0);
+  pthread_t thread_id[2];
+
+  pthread_create(&thread_id[0], NULL, receive_thread, (void *)&new_socket);
+
+  pthread_create(&thread_id[1], NULL, send_thread, (void *)&new_socket);
+
+  pthread_join(thread_id[0], NULL);
+  pthread_join(thread_id[1], NULL);
 
   printf("**\tClosing Connection\t**\n");
   close(new_socket);

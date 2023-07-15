@@ -1,6 +1,8 @@
 #include "client.h"
+#include "connection.h"
 
 #include <arpa/inet.h>
+#include <pthread.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,9 +13,12 @@
 
 #include <unistd.h>
 #define PORT 8080
+#define BUFFER_SIZE 4096
 
 int client_execute() {
   struct sockaddr_in serv_address = {0};
+
+  int bytes_received;
 
   int sockfd;
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -38,19 +43,14 @@ int client_execute() {
     return -1;
   }
 
-  printf("**\tSending Message\t\t**\n");
-  send(sockfd, "Hello", 5, 0);
+  pthread_t thread_id[2];
 
-  char buffer[1024] = {0};
+  pthread_create(&thread_id[0], NULL, receive_thread, (void *)&sockfd);
 
-  int bytes_received;
+  pthread_create(&thread_id[1], NULL, send_thread, (void *)&sockfd);
 
-  printf("**\tReceiving Message\t**\n");
-  if ((bytes_received = read(sockfd, buffer, 1024)) > 0) {
-    printf("%d, %s\n", bytes_received, buffer);
-  } else {
-    printf("Message too small");
-  }
+  pthread_join(thread_id[0], NULL);
+  pthread_join(thread_id[1], NULL);
 
   printf("**\tClosing Connection\t**\n");
   close(sockfd);
