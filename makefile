@@ -11,12 +11,13 @@ OBJ = $(patsubst %.c,%.o, $(SRC))
 
 
 RM = rm -f
-
+MKDIR = mkdir -p
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 make: $(OBJ)
+	$(MKDIR) bin
 	$(CC) -o bin/$(NAME) $^ $(CFLAGS)
 
 run: make
