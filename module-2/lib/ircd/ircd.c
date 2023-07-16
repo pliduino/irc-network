@@ -9,6 +9,8 @@
 #include <sys/poll.h>
 
 #include "../errutils/api.h"
+#include "../tqueue/api.h"
+#include "../tlist/api.h"
 
 #include "internal.h"
 #include "api.h"
@@ -18,6 +20,7 @@ struct ircd
   uint16_t port;
   uint16_t message_max_size;
   uint16_t max_pending_connections;
+  tlist_t *queue_list;
   ramclean_t *ramclean;
 };
 
@@ -39,8 +42,14 @@ static void _run_connection_thread(ircd_t *d, void *(*routine)(void *), int32_t 
 {
   pthread_t thread_id;
   pthread_attr_t thread_attr;
-  int32_t *client_socket_buffer = malloc(sizeof(int32_t));
-  *client_socket_buffer = client_socket;
+
+  tqueue_t *queue = tqueue_init();
+  tlist_push(d->queue_list, (void *)queue);
+
+  connection_thread_args_t *buffer_args = malloc(sizeof(connection_thread_args_t));
+  buffer_args->client_socket = client_socket;
+  buffer_args->queue = queue;
+  buffer_args->tlist = d->queue_list;
 
   if (pthread_attr_init(&thread_attr))
     errutils_exit(0, _exit_function, (void *)d);
@@ -48,7 +57,7 @@ static void _run_connection_thread(ircd_t *d, void *(*routine)(void *), int32_t 
   if (pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED))
     errutils_exit(0, _exit_function, (void *)d);
 
-  if (pthread_create(&thread_id, &thread_attr, routine, (void *)client_socket_buffer))
+  if (pthread_create(&thread_id, &thread_attr, routine, (void *)buffer_args))
     errutils_exit(0, _exit_function, (void *)d);
 }
 
@@ -59,6 +68,8 @@ ircd_t *ircd_init()
   d->message_max_size = 4096;
   d->max_pending_connections = 8;
   d->ramclean = ramclean_init();
+  d->queue_list = tlist_init(64);
+  ramclean_append(d->ramclean, (void **)&d->queue_list, tlist_destroy);
   return d;
 }
 

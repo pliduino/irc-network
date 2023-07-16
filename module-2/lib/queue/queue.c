@@ -30,12 +30,10 @@ void queue_set_item_data_destroy(queue_t *q, void (*item_data_destroy)(void **))
   q->item_data_destroy = item_data_destroy;
 }
 
-void queue_push(queue_t *q, void **data_pointer)
+void queue_push(queue_t *q, void *data)
 {
-  if (data_pointer == NULL || *data_pointer == NULL)
+  if (data == NULL)
     return;
-  void *data = *data_pointer;
-  *data_pointer = NULL;
 
   queue_item_t *item = (queue_item_t *)malloc(sizeof(queue_item_t));
   item->data = data;

@@ -30,11 +30,8 @@ uint8_t monitor_append_function(monitor_t *m, void *(*function)(void *, void *))
   return m->n_functions++;
 }
 
-void monitor_set_shared_data(monitor_t *m, void **shared_data_pointer, void (*shared_data_destroy)(void **))
+void monitor_set_shared_data(monitor_t *m, void *shared_data, void (*shared_data_destroy)(void **))
 {
-  void *shared_data = *shared_data_pointer;
-  *shared_data_pointer = NULL;
-
   m->shared_data = shared_data;
   m->shared_data_destroy = shared_data_destroy;
 }

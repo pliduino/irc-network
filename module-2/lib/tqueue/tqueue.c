@@ -21,8 +21,8 @@ typedef enum function_id
 static void *_monitor_push(void *shared_data, void *args)
 {
   queue_t *queue = (queue_t *)shared_data;
-  void **data_pointer = (void **)args;
-  queue_push(queue, data_pointer);
+  void *data = args;
+  queue_push(queue, data);
   return NULL;
 }
 
@@ -45,7 +45,7 @@ tqueue_t *tqueue_init()
   tqueue_t *tq = (tqueue_t *)malloc(sizeof(tqueue_t));
   queue_t *queue = queue_init();
   tq->monitor = monitor_init();
-  monitor_set_shared_data(tq->monitor, (void **)&queue, queue_destroy);
+  monitor_set_shared_data(tq->monitor, (void *)queue, queue_destroy);
   monitor_append_function(tq->monitor, _monitor_push);
   monitor_append_function(tq->monitor, _monitor_pop);
   monitor_append_function(tq->monitor, _monitor_set_item_data_destroy);
@@ -53,9 +53,9 @@ tqueue_t *tqueue_init()
   return tq;
 }
 
-void tqueue_push(tqueue_t *tq, void **data_pointer)
+void tqueue_push(tqueue_t *tq, void *data)
 {
-  monitor_run(tq->monitor, PUSH, (void *)data_pointer);
+  monitor_run(tq->monitor, PUSH, data);
 }
 
 void *tqueue_pop(tqueue_t *tq)

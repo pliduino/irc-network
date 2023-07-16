@@ -5,74 +5,84 @@
 
 #include <netinet/in.h>
 #include <sys/socket.h>
-
-#include "internal.h"
+#include "../tqueue/api.h"
+#include "../ircd/internal.h"
+#include "../tlist/api.h"
 
 #define BUFFER_SIZE 4096
 
-char **readMessage(int *tam, int buffer, FILE *stream)
-{
-  char **message = 0;
-  char c;
-  fscanf(stream, " %c", &c);
-  for (*tam = 0; 1; *tam += 1)
-  {
-    message = (char **)realloc(message, (*tam + 1) * sizeof(char *));
-    message[*tam] = (char *)malloc(buffer);
-
-    for (int i = 0; i < buffer - 1; i++)
-    {
-      if (c == '\n' || c == '\r' || c == EOF)
-      {
-        message[*tam][i] = '\0';
-        *tam += 1;
-        return message;
-      }
-      message[*tam][i] = c;
-      c = fgetc(stream);
-    }
-    message[*tam][buffer - 1] = '\0';
-  }
-}
-
 void *ircd_connection_send(void *args)
 {
-  char **message;
-  int sockfd = *(int *)args;
+  char *message;
+  connection_thread_args_t *connection_args = (connection_thread_args_t *)args;
 
   while (1)
   {
-    int tam;
-    message = readMessage(&tam, BUFFER_SIZE, stdin);
+    message = (char *)tqueue_pop(connection_args->queue);
 
-    if (strcmp(message[0], "/quit") == 0)
+    if (message == NULL)
     {
-      break;
+      continue;
     }
-    for (int i = 0; i < tam; i++)
+
+    send(connection_args->client_socket, message, strlen(message), 0);
+
+    if (strcmp(message, "/quit") == 0)
     {
-      send(sockfd, message[i], strlen(message[i]), 0);
-      free(message[i]);
+      free(message);
+      break;
     }
     free(message);
   }
+
   return NULL;
 }
 
 void *ircd_connection_receive(void *args)
 {
-  char buffer[BUFFER_SIZE] = {0};
+  char buffer[BUFFER_SIZE];
   int bytes_received;
-  int new_socket = *(int *)args;
+  connection_thread_args_t *connection_args = (connection_thread_args_t *)args;
 
   while (1)
   {
     memset(buffer, 0, sizeof(buffer));
-    if ((bytes_received = read(new_socket, buffer, BUFFER_SIZE)) > 0)
+    if ((bytes_received = read(connection_args->client_socket, buffer, BUFFER_SIZE)) > 0)
     {
-      printf("%s: %s\n", "Other", buffer);
+      if (buffer[0] == '/')
+      {
+        if (strcmp(buffer, "/quit") == 0)
+        {
+          char *quit_message = malloc(6);
+          strcpy(quit_message, buffer);
+          tqueue_push(connection_args->queue, quit_message);
+          break;
+        }
+        else if (strcmp(buffer, "/ping") == 0)
+        {
+          send(connection_args->client_socket, "pong", strlen("pong"), 0);
+          continue;
+        }
+        else
+        {
+          send(connection_args->client_socket, "Invalid command!", strlen("Invalid command!"), 0);
+        }
+      }
+
+      for (int i = 0; i < tlist_get_size(connection_args->tlist); i++)
+      {
+        tqueue_t *queue = (tqueue_t *)tlist_get(connection_args->tlist, i);
+
+        char *message = (char *)malloc(strlen(buffer) + 1);
+        strcpy(message, buffer);
+        tqueue_push(queue, (void **)message);
+      }
     }
   }
+
+  tlist_remove(connection_args->tlist, connection_args->queue);
+  tqueue_destroy((void **)&connection_args->queue);
+
   return NULL;
 }
 
