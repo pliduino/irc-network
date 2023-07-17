@@ -12,6 +12,13 @@ struct channel_queue
   tqueue_t *queue;
 };
 
+typedef struct ip_nick_mapping ip_nick_mapping_t;
+struct ip_nick_mapping
+{
+  uint32_t ip;
+  char *nick;
+};
+
 typedef struct connection_thread_args connection_thread_args_t;
 struct connection_thread_args
 {
@@ -20,6 +27,9 @@ struct connection_thread_args
   tlist_t *queue_list;
   tlist_t *nick_list;
   tlist_t *channel_list;
+  tlist_t *ip_list;
+  struct in_addr my_ip;
+  int8_t is_muted;
   char *nickname;
 };
 

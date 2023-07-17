@@ -23,6 +23,7 @@ struct ircd
   tlist_t *queue_list;
   tlist_t *channel_list;
   tlist_t *nick_list;
+  tlist_t *ip_list;
   ramclean_t *ramclean;
 };
 
@@ -40,19 +41,10 @@ static void _exit_function(void *args)
   ircd_destroy((void **)&d);
 }
 
-static void _run_connection_thread(ircd_t *d, void *(*routine)(void *), int32_t client_socket, channel_queue_t *queue)
+static void _run_connection_thread(ircd_t *d, void *(*routine)(void *), connection_thread_args_t *buffer_args)
 {
   pthread_t thread_id;
   pthread_attr_t thread_attr;
-
-  connection_thread_args_t *buffer_args = malloc(sizeof(connection_thread_args_t));
-  buffer_args->client_socket = client_socket;
-  buffer_args->channel_queue = queue;
-  buffer_args->nickname = malloc(51);
-  buffer_args->nickname[0] = '\0';
-  buffer_args->queue_list = d->queue_list;
-  buffer_args->nick_list = d->nick_list;
-  buffer_args->channel_list = d->channel_list;
 
   if (pthread_attr_init(&thread_attr))
     errutils_exit(0, _exit_function, (void *)d);
@@ -77,6 +69,8 @@ ircd_t *ircd_init()
   ramclean_append(d->ramclean, (void **)&d->nick_list, tlist_destroy);
   d->channel_list = tlist_init(64);
   ramclean_append(d->ramclean, (void **)&d->channel_list, tlist_destroy);
+  d->ip_list = tlist_init(64);
+  ramclean_append(d->ramclean, (void **)&d->ip_list, tlist_destroy);
   return d;
 }
 
@@ -131,8 +125,20 @@ void ircd_listen(ircd_t *d)
 
     tlist_push(d->queue_list, (void *)channel_queue);
 
-    _run_connection_thread(d, ircd_connection_send, client_connection.socket, channel_queue);
-    _run_connection_thread(d, ircd_connection_receive, client_connection.socket, channel_queue);
+    connection_thread_args_t *buffer_args = malloc(sizeof(connection_thread_args_t));
+    buffer_args->client_socket = client_connection.socket;
+    buffer_args->channel_queue = channel_queue;
+    buffer_args->nickname = malloc(51);
+    buffer_args->nickname[0] = '\0';
+    buffer_args->queue_list = d->queue_list;
+    buffer_args->nick_list = d->nick_list;
+    buffer_args->channel_list = d->channel_list;
+    buffer_args->ip_list = d->ip_list;
+    buffer_args->is_muted = 0;
+    buffer_args->my_ip = client_connection.address.sin_addr;
+
+    _run_connection_thread(d, ircd_connection_send, buffer_args);
+    _run_connection_thread(d, ircd_connection_receive, buffer_args);
   }
 
   shutdown(socket_file_descriptor, SHUT_RDWR);
