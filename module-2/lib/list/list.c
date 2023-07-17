@@ -43,7 +43,7 @@ void list_remove(list_t *l, void *data)
     if (l->items[i] == data)
     {
       l->size--;
-      for (uint32_t j = i; j < l->size; i++)
+      for (uint32_t j = i; j < l->size; j++)
         l->items[j] = l->items[j + 1];
       return;
     }
