@@ -77,17 +77,17 @@ void *ircclient_connection_receive(void *args)
         break;
       else if (strncmp(buffer, "/kick", 5) == 0)
       {
-        printf("You were kicked by the admin.");
+        printf("You were kicked by the admin.\n");
         continue;
       }
       else if (strncmp(buffer, "/mute", 5) == 0)
       {
-        printf("You were muted by the admin.");
+        printf("You were muted by the admin.\n");
         continue;
       }
       else if (strncmp(buffer, "/unmute", 7) == 0)
       {
-        printf("You were unmuted by the admin.");
+        printf("You were unmuted by the admin.\n");
         continue;
       }
       printf("%s\n", buffer);

@@ -25,7 +25,8 @@ static struct in_addr *ip_list_search(tlist_t *l, char *nickname)
       return ip_addr;
     }
   }
-  return 0;
+  free(ip_addr);
+  return NULL;
 }
 
 void *ircd_connection_send(void *args)
@@ -36,8 +37,6 @@ void *ircd_connection_send(void *args)
   while (1)
   {
     message = (char *)tqueue_pop(connection_args->channel_queue->queue);
-
-    send(connection_args->client_socket, message, strlen(message), 0);
 
     if (message == NULL)
     {
@@ -217,15 +216,20 @@ void *ircd_connection_receive(void *args)
           char *nickname = malloc(51);
           strncpy(nickname, &buffer[7], 50);
           struct in_addr *found_ip = ip_list_search(connection_args->ip_list, nickname);
-          char *ip = inet_ntoa(*found_ip);
-          free(found_ip);
 
-          sprintf(message, "%s : %s", nickname, ip);
+          if (found_ip != NULL)
+          {
+            char *ip = inet_ntoa(*found_ip);
+            sprintf(message, "%s : %s", nickname, ip);
+            free(found_ip);
+            // free(ip);
+          }
+          else
+            sprintf(message, "Nickname not found");
 
           send(connection_args->client_socket, message, strlen(message), 0);
 
           free(nickname);
-          free(ip);
           free(message);
         }
         else
