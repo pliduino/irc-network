@@ -80,13 +80,3 @@ void *ircclient_connection_receive(void *args)
   }
   return NULL;
 }
-
-// struct pollfd client_poll;
-// memset(&client_poll, 0, sizeof(client_poll));
-
-// client_poll.fd = client_connection.socket;
-// client_poll.events = POLLIN;
-
-// int poll_error = poll(&client_poll, 1, -1);
-
-// printf("%d", poll_error);

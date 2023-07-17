@@ -88,20 +88,7 @@ void *ircd_connection_receive(void *args)
     }
   }
 
-  // FILE *fp = fopen("/home/lucas/buffer/irc-network/teste.txt", "w");
-  // fprintf(fp, "DEU QUIT RECEIVE");
-  // fclose(fp);
   tlist_remove(connection_args->tlist, connection_args->queue);
 
   return NULL;
 }
-
-// struct pollfd client_poll;
-// memset(&client_poll, 0, sizeof(client_poll));
-
-// client_poll.fd = client_connection.socket;
-// client_poll.events = POLLIN;
-
-// int poll_error = poll(&client_poll, 1, -1);
-
-// printf("%d", poll_error);
