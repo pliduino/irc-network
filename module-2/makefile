@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Wall
+CFLAGS := -Wall -O3
 
 MKDIR := mkdir -p
 RMDIR := rm -rf

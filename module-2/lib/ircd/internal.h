@@ -11,6 +11,7 @@ struct connection_thread_args
   int32_t client_socket;
   tqueue_t *queue;
   tlist_t *tlist;
+  char *nickname;
 };
 
 void *ircd_connection_send(void *args);

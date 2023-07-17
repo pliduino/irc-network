@@ -43,9 +43,18 @@ void *ircclient_connection_send(void *args)
     int tam;
     message = readMessage(&tam, BUFFER_SIZE, stdin);
 
+    if (strcmp(message[0], "/quit") == 0)
+    {
+      send(sockfd, message[0], strlen(message[0]), 0);
+      free(message[0]);
+      free(message);
+      break;
+    }
+
     for (int i = 0; i < tam; i++)
     {
       send(sockfd, message[i], strlen(message[i]), 0);
+
       free(message[i]);
     }
     free(message);
@@ -64,7 +73,9 @@ void *ircclient_connection_receive(void *args)
     memset(buffer, 0, sizeof(buffer));
     if ((bytes_received = read(new_socket, buffer, BUFFER_SIZE)) > 0)
     {
-      printf("%s: %s\n", "Other", buffer);
+      if (strcmp(buffer, "/quit") == 0)
+        break;
+      printf("%s\n", buffer);
     }
   }
   return NULL;

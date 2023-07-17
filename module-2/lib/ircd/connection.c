@@ -18,6 +18,7 @@ void *ircd_connection_send(void *args)
 
   while (1)
   {
+
     message = (char *)tqueue_pop(connection_args->queue);
 
     if (message == NULL)
@@ -34,6 +35,10 @@ void *ircd_connection_send(void *args)
     }
     free(message);
   }
+
+  tqueue_destroy((void **)&connection_args->queue);
+  close(connection_args->client_socket);
+  free(connection_args);
 
   return NULL;
 }
@@ -66,6 +71,7 @@ void *ircd_connection_receive(void *args)
         else
         {
           send(connection_args->client_socket, "Invalid command!", strlen("Invalid command!"), 0);
+          continue;
         }
       }
 
@@ -73,15 +79,19 @@ void *ircd_connection_receive(void *args)
       {
         tqueue_t *queue = (tqueue_t *)tlist_get(connection_args->tlist, i);
 
-        char *message = (char *)malloc(strlen(buffer) + 1);
-        strcpy(message, buffer);
+        char *message = (char *)malloc(strlen(buffer) + 51);
+
+        sprintf(message, "%s: %s", connection_args->nickname, buffer);
+
         tqueue_push(queue, (void **)message);
       }
     }
   }
 
+  // FILE *fp = fopen("/home/lucas/buffer/irc-network/teste.txt", "w");
+  // fprintf(fp, "DEU QUIT RECEIVE");
+  // fclose(fp);
   tlist_remove(connection_args->tlist, connection_args->queue);
-  tqueue_destroy((void **)&connection_args->queue);
 
   return NULL;
 }

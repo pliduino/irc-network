@@ -28,6 +28,12 @@ int main()
   serv_address.sin_family = AF_INET;
   serv_address.sin_port = htons(PORT);
 
+  char input_buffer[32];
+  while (strcmp(input_buffer, "/connect") != 0)
+  {
+    scanf("%s", input_buffer);
+  }
+
   if (inet_pton(AF_INET, "127.0.0.1", &serv_address.sin_addr) <= 0)
   {
     printf("Invalid address");

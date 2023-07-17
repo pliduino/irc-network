@@ -38,17 +38,16 @@ static void _exit_function(void *args)
   ircd_destroy((void **)&d);
 }
 
-static void _run_connection_thread(ircd_t *d, void *(*routine)(void *), int32_t client_socket)
+static void _run_connection_thread(ircd_t *d, void *(*routine)(void *), int32_t client_socket, tqueue_t *queue, int nickname)
 {
   pthread_t thread_id;
   pthread_attr_t thread_attr;
 
-  tqueue_t *queue = tqueue_init();
-  tlist_push(d->queue_list, (void *)queue);
-
   connection_thread_args_t *buffer_args = malloc(sizeof(connection_thread_args_t));
   buffer_args->client_socket = client_socket;
   buffer_args->queue = queue;
+  buffer_args->nickname = malloc(51);
+  sprintf(buffer_args->nickname, "%d", nickname);
   buffer_args->tlist = d->queue_list;
 
   if (pthread_attr_init(&thread_attr))
@@ -85,6 +84,7 @@ void ircd_set_message_max_size(ircd_t *d, uint16_t message_max_size)
 
 void ircd_listen(ircd_t *d)
 {
+  int id = 0;
   printf("Server is running!\n");
 
   int32_t socket_file_descriptor = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -116,8 +116,12 @@ void ircd_listen(ircd_t *d)
     char *client_ip_addr = inet_ntoa(client_connection.address.sin_addr);
     printf("Connected to %s\n", client_ip_addr);
 
-    _run_connection_thread(d, ircd_connection_send, client_connection.socket);
-    _run_connection_thread(d, ircd_connection_receive, client_connection.socket);
+    tqueue_t *queue = tqueue_init();
+    tlist_push(d->queue_list, (void *)queue);
+
+    _run_connection_thread(d, ircd_connection_send, client_connection.socket, queue, id);
+    _run_connection_thread(d, ircd_connection_receive, client_connection.socket, queue, id);
+    id++;
   }
 
   shutdown(socket_file_descriptor, SHUT_RDWR);
