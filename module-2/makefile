@@ -34,9 +34,3 @@ run-client: client
 
 run-server: server
 	$(SERVER_BIN_FILE)
-
-valgrind-client: client
-	valgrind $(CLIENT_BIN_FILE)
-
-valgrind-server: server
-	valgrind $(SERVER_BIN_FILE)
